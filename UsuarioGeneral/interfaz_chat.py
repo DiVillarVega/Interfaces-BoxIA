@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 
 class ChatUI(QWidget):
     def __init__(self):
@@ -20,9 +21,11 @@ class ChatUI(QWidget):
 
         # Top bar
         top_bar = QHBoxLayout()
-        logo = QLabel("🧠 BOX IA")
-        logo.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        logo.setStyleSheet("color: #00BFFF;")
+        logo = QLabel()
+        pixmap = QPixmap("img/logo.png") # Aquí vas a poner la ruta del logo
+        pixmap = pixmap.scaledToHeight(40)  # Ajusta la altura según necesidad
+        logo.setPixmap(pixmap)
+
 
         clear_btn = QPushButton("Limpiar chat")
         clear_btn.setStyleSheet("background-color: white; color: black; padding: 6px 12px; border-radius: 8px;")
