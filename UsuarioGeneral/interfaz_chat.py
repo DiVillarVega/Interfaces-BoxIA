@@ -9,12 +9,17 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
 class ChatUI(QWidget):
+    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("BOX IA - Chatbot")
         self.setStyleSheet("background-color: #1e1e1e; color: white;")
         self.setGeometry(100, 100, 900, 600)
+        self.ultima_pregunta = ""
+        self.ultima_respuesta = ""
         self.init_ui()
+        
 
     def init_ui(self):
         layout = QVBoxLayout(self)
@@ -90,6 +95,7 @@ class ChatUI(QWidget):
             return
         self.add_message("user", user_text)
         self.input_box.clear()
+        self.ultima_pregunta = user_text  # Guarda la pregunta
 
         try:
             response = requests.post("http://localhost:8000/preguntar", json={"pregunta": user_text})
@@ -97,8 +103,52 @@ class ChatUI(QWidget):
         except Exception as e:
             respuesta_ia = f"Error al conectarse con el servidor: {str(e)}"
 
-        self.add_message("bot", respuesta_ia)
+        self.ultima_respuesta = respuesta_ia  # Guarda la respuesta
+        self.add_bot_response_with_button(respuesta_ia)
         self.scroll_area.verticalScrollBar().setValue(self.scroll_area.verticalScrollBar().maximum())
+
+    def add_bot_response_with_button(self, respuesta):
+        respuesta_label = QLabel(respuesta)
+        respuesta_label.setWordWrap(True)
+        respuesta_label.setStyleSheet("background-color: transparent; padding: 10px; margin: 10px; color: white;")
+
+        icon = QLabel("🤖")
+        icon.setStyleSheet("font-size: 24px; margin-right: 6px;")
+
+        reportar_btn = QPushButton("📩 Reportar respuesta")
+        reportar_btn.setStyleSheet("background-color: #ff4d4d; color: white; padding: 4px; border-radius: 6px;")
+        reportar_btn.clicked.connect(self.reportar_respuesta)
+
+        col = QVBoxLayout()
+        col.addWidget(respuesta_label)
+        col.addWidget(reportar_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        row = QHBoxLayout()
+        row.addWidget(icon)
+        row.addLayout(col)
+        row.addStretch()
+
+        container = QWidget()
+        container.setLayout(row)
+        self.chat_layout.insertWidget(self.chat_layout.count()-1, container)
+
+    def reportar_respuesta(self):
+        if not self.ultima_pregunta or not self.ultima_respuesta:
+            return
+
+        try:
+            payload = {
+                "pregunta": self.ultima_pregunta,
+                "respuesta": self.ultima_respuesta
+            }
+            r = requests.post("http://localhost:8000/reportar-pregunta", json=payload)
+            if r.status_code == 200:
+                print("✅ Pregunta reportada correctamente.")
+            else:
+                print("❌ Error al reportar la pregunta.")
+        except Exception as e:
+            print(f"⚠️ Error al reportar: {e}")
+
 
     def clear_chat(self):
         for i in reversed(range(self.chat_layout.count() - 1)):
