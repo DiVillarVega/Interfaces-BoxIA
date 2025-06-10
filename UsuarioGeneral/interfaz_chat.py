@@ -1,3 +1,4 @@
+#interfaz_chat.py
 import sys
 import requests
 from PyQt6.QtWidgets import (

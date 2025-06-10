@@ -1,3 +1,4 @@
+#interfaz_docs.py
 import sys
 import requests
 from PyQt6.QtWidgets import (
@@ -5,6 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+from manage_reports import ReportsUI  # Importa la ventana de gestión
 
 class UploadUI(QWidget):
     def __init__(self):
@@ -27,11 +29,19 @@ class UploadUI(QWidget):
         self.status_label = QLabel("Ningún archivo seleccionado.")
         layout.addWidget(self.status_label)
 
+        # Botón para abrir la ventana de gestión de reportes
+        btn_manage = QPushButton("Gestionar Reportes")
+        btn_manage.setStyleSheet("background-color: #444; color: white; padding: 10px;")
+        btn_manage.clicked.connect(self.open_reports_window)
+        layout.addWidget(btn_manage)
+
+        # Botón de selección de archivo
         btn_select = QPushButton("Seleccionar archivo")
         btn_select.setStyleSheet("background-color: white; color: black; padding: 10px;")
         btn_select.clicked.connect(self.select_file)
         layout.addWidget(btn_select)
 
+        # Botón de subida
         btn_upload = QPushButton("Subir a la IA")
         btn_upload.setStyleSheet("background-color: #00BFFF; color: white; padding: 14px;")
         btn_upload.clicked.connect(self.upload_file)
@@ -39,8 +49,18 @@ class UploadUI(QWidget):
 
         self.setLayout(layout)
 
+    def open_reports_window(self):
+        # Guarda la ventana en un atributo para que no se destruya
+        self.reports_window = ReportsUI()
+        self.reports_window.show()
+
     def select_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo", "", "Archivos PDF/TXT (*.pdf *.txt)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Seleccionar archivo",
+            "",
+            "Archivos PDF/TXT (*.pdf *.txt)"
+        )
         if file_path:
             self.selected_file = file_path
             self.status_label.setText(f"📁 Archivo seleccionado: {file_path}")
@@ -54,7 +74,11 @@ class UploadUI(QWidget):
 
         try:
             ext = self.selected_file.lower()
-            endpoint = "http://localhost:8000/cargar-documento-pdf" if ext.endswith(".pdf") else "http://localhost:8000/cargar-documento-txt"
+            endpoint = (
+                "http://localhost:8000/cargar-documento-pdf"
+                if ext.endswith(".pdf")
+                else "http://localhost:8000/cargar-documento-txt"
+            )
             with open(self.selected_file, "rb") as f:
                 files = {"archivo": f}
                 r = requests.post(endpoint, files=files)
