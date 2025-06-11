@@ -4,7 +4,7 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QTableWidget, QTableWidgetItem,
-    QFileDialog, QMessageBox
+    QFileDialog, QMessageBox, QAbstractItemView
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
@@ -30,6 +30,7 @@ class ReportsUI(QWidget):
         self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels(["ID", "Pregunta", "Respuesta", "Fecha", "Acción"])
         self.table.verticalHeader().setVisible(False)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.table)
 
         # Botones
