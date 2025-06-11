@@ -121,7 +121,7 @@ class ChatUI(QWidget):
 
     def ajustar_altura_input(self):
         doc_height = self.input_box.document().size().height()
-        nueva_altura = min(120, int(doc_height + 20))  # máximo 120px
+        nueva_altura = max(60, min(120, int(doc_height + 20)))  # mínimo 60px, máximo 120px
         self.input_box.setFixedHeight(nueva_altura)
 
     def add_message(self, sender, text):
