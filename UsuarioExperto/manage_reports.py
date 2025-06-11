@@ -27,8 +27,8 @@ class ReportsUI(QWidget):
         layout.addWidget(title)
 
         # Tabla
-        self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["ID", "Pregunta", "Respuesta", "Fecha"])
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["ID", "Pregunta", "Respuesta", "Fecha", "Acción"])
         self.table.verticalHeader().setVisible(False)
         layout.addWidget(self.table)
 
@@ -59,17 +59,31 @@ class ReportsUI(QWidget):
             QMessageBox.critical(self, "Error", f"No se pudo cargar: {e}")
             return
 
+        if not data:
+            QMessageBox.information(self, "Sin datos", "No hay preguntas reportadas.")
+            self.table.setRowCount(0)
+            return
+
         self.table.setRowCount(len(data))
         for i, row in enumerate(data):
             self.table.setItem(i, 0, QTableWidgetItem(str(row["id"])))
             self.table.setItem(i, 1, QTableWidgetItem(row["pregunta"]))
             self.table.setItem(i, 2, QTableWidgetItem(row["respuesta"]))
-            # Formatea timestamp ISO a local
             dt = datetime.fromisoformat(row["fecha"])
             self.table.setItem(i, 3, QTableWidgetItem(dt.strftime("%Y-%m-%d %H:%M:%S")))
+            btn_check = QPushButton("✔️")
+            btn_check.setToolTip("Marcar pregunta como revisada")
+            btn_check.clicked.connect(lambda _, report_id=row["id"]: self.mark_as_checked(report_id))
+            self.table.setCellWidget(i, 4, btn_check)
+
 
 
     def export_excel(self):
+        # Verificar si hay filas en la tabla antes de exportar
+        if self.table.rowCount() == 0:
+            QMessageBox.information(self, "Sin datos", "No hay preguntas reportadas.")
+            return
+
         try:
             r = requests.get(f"{API_BASE}/exportar-preguntas", stream=True)
             r.raise_for_status()
@@ -86,6 +100,7 @@ class ReportsUI(QWidget):
                 f.write(chunk)
         QMessageBox.information(self, "Exportado", f"Guardado en:\n{path}")
 
+        
     def upload_excel(self):
         path, _ = QFileDialog.getOpenFileName(self, "Selecciona archivo Excel", "", "Excel Files (*.xlsx *.xls)")
         if not path:
@@ -100,6 +115,16 @@ class ReportsUI(QWidget):
             self.load_reports()  # refrescar tabla tras actualizar
         except Exception as e:
             QMessageBox.critical(self, "Error", f"No se pudo subir el archivo:\n{e}")
+
+    def mark_as_checked(self, report_id):
+        try:
+            r = requests.post(f"{API_BASE}/marcar-revisado", json={"id": report_id})
+            r.raise_for_status()
+            QMessageBox.information(self, "Actualizado", f"Pregunta con el ID {report_id} marcada como revisada.")
+            self.load_reports()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo actualizar:\n{e}")
+
 
 
 
