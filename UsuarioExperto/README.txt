@@ -16,3 +16,8 @@ deactivate
 pip install -r requirements.txt
 -Arrancar la interfaz:
 python3 interfaz_docs.py
+
+
+cd UsuarioExperto
+source docs-env/bin/activate
+python3 interfaz_docs.py
