@@ -1,4 +1,3 @@
-#interfaz_docs.py
 import sys
 import requests
 from PyQt6.QtWidgets import (
@@ -13,44 +12,73 @@ class UploadUI(QWidget):
         super().__init__()
         self.setWindowTitle("Carga de Documentos - BOX IA")
         self.setGeometry(100, 100, 500, 300)
-        self.setStyleSheet("background-color: #1e1e1e; color: white;")
         self.selected_file = None
         self.init_ui()
+        self.apply_styles()
+
+    def apply_styles(self):
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QLabel#titleLabel {
+                color: #00BFFF;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            QPushButton {
+                background-color: #2a2a2a;
+                color: white;
+                padding: 10px;
+                border-radius: 10px;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+            QPushButton#uploadButton {
+                background-color: #00BFFF;
+                color: white;
+                padding: 14px;
+                font-size: 15px;
+                border-radius: 12px;
+            }
+        """)
 
     def init_ui(self):
         layout = QVBoxLayout()
 
         title = QLabel("📂 Cargar documentos a la IA")
-        title.setFont(QFont("Arial", 16))
-        title.setStyleSheet("color: #00BFFF;")
+        title.setObjectName("titleLabel")
+        title.setFont(QFont("Segoe UI", 16))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
         self.status_label = QLabel("Ningún archivo seleccionado.")
+        self.status_label.setFont(QFont("Segoe UI", 11))
         layout.addWidget(self.status_label)
 
         # Botón para abrir la ventana de gestión de reportes
-        btn_manage = QPushButton("Gestionar Reportes")
-        btn_manage.setStyleSheet("background-color: #444; color: white; padding: 10px;")
+        btn_manage = QPushButton("🛠️ Gestionar Reportes")
         btn_manage.clicked.connect(self.open_reports_window)
         layout.addWidget(btn_manage)
 
         # Botón de selección de archivo
-        btn_select = QPushButton("Seleccionar archivo")
-        btn_select.setStyleSheet("background-color: white; color: black; padding: 10px;")
+        btn_select = QPushButton("🗂️ Seleccionar archivo")
         btn_select.clicked.connect(self.select_file)
         layout.addWidget(btn_select)
 
         # Botón de subida
-        btn_upload = QPushButton("Subir a la IA")
-        btn_upload.setStyleSheet("background-color: #00BFFF; color: white; padding: 14px;")
+        btn_upload = QPushButton("📤 Subir a la IA")
+        btn_upload.setObjectName("uploadButton")
         btn_upload.clicked.connect(self.upload_file)
         layout.addWidget(btn_upload)
 
         self.setLayout(layout)
 
     def open_reports_window(self):
-        # Guarda la ventana en un atributo para que no se destruya
         self.reports_window = ReportsUI()
         self.reports_window.show()
 
@@ -59,7 +87,7 @@ class UploadUI(QWidget):
             self,
             "Seleccionar archivo",
             "",
-            "Archivos PDF/TXT (*.pdf *.txt)"
+            "Archivos PDF (*.pdf)"
         )
         if file_path:
             self.selected_file = file_path
@@ -72,16 +100,16 @@ class UploadUI(QWidget):
             self.status_label.setText("❗ Primero selecciona un archivo.")
             return
 
+        if not self.selected_file.lower().endswith(".pdf"):
+            self.status_label.setText("❌ Solo se permiten archivos PDF.")
+            return
+
         try:
-            ext = self.selected_file.lower()
-            endpoint = (
-                "http://localhost:8000/cargar-documento-pdf"
-                if ext.endswith(".pdf")
-                else "http://localhost:8000/cargar-documento-txt"
-            )
+            endpoint = "http://localhost:8000/cargar-documento-pdf"
             with open(self.selected_file, "rb") as f:
                 files = {"archivo": f}
                 r = requests.post(endpoint, files=files)
+
             if r.status_code == 200:
                 self.status_label.setText("✅ Documento cargado correctamente.")
             else:

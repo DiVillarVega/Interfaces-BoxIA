@@ -3,7 +3,7 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QTableWidget, QTableWidgetItem,
-    QFileDialog, QMessageBox, QAbstractItemView, QComboBox
+    QFileDialog, QMessageBox, QAbstractItemView, QComboBox, QHeaderView
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
@@ -13,15 +13,52 @@ API_BASE = "http://localhost:8000"
 class ReportsUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Gestión de Preguntas Reportadas")
-        self.resize(800, 500)
+        self.setWindowTitle("BoxIA - Gestión de Preguntas Reportadas")
+        self.resize(950, 550)
         self.init_ui()
+        self.apply_styles()
+
+    def apply_styles(self):
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                color: white;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QTableWidget {
+                background-color: #2a2a2a;
+                color: white;
+                gridline-color: #444;
+                border: none;
+            }
+            QHeaderView::section {
+                background-color: #3a3a3a;
+                color: white;
+                padding: 6px;
+                border: none;
+            }
+            QPushButton {
+                background-color: #2a2a2a;
+                color: white;
+                padding: 6px 10px;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+            QComboBox {
+                background-color: #2a2a2a;
+                color: white;
+                padding: 6px;
+                border-radius: 6px;
+            }
+        """)
 
     def init_ui(self):
         layout = QVBoxLayout()
 
-        title = QLabel("📝 Preguntas Reportadas")
-        title.setFont(QFont("Arial", 16))
+        title = QLabel("📝 Gestión de Preguntas Reportadas")
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
@@ -34,22 +71,23 @@ class ReportsUI(QWidget):
         self.table.setHorizontalHeaderLabels(["ID", "Pregunta", "Respuesta", "Fecha", "Acción"])
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setWordWrap(True)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         layout.addWidget(self.table)
 
         btn_layout = QHBoxLayout()
-        btn_load = QPushButton("Cargar Lista")
-        btn_load.clicked.connect(self.load_reports)
-        btn_layout.addWidget(btn_load)
-
-        btn_export = QPushButton("Exportar Excel")
-        btn_export.clicked.connect(self.export_excel)
-        btn_layout.addWidget(btn_export)
-
-        btn_upload = QPushButton("Subir Respuestas Excel")
-        btn_upload.clicked.connect(self.upload_excel)
-        btn_layout.addWidget(btn_upload)
-
+        for text, handler in [
+            ("🔄 Cargar Lista", self.load_reports),
+            ("📤 Exportar Excel", self.export_excel),
+            ("📥 Subir Respuestas Excel", self.upload_excel),
+        ]:
+            btn = QPushButton(text)
+            btn.clicked.connect(handler)
+            btn_layout.addWidget(btn)
         layout.addLayout(btn_layout)
+
         self.setLayout(layout)
 
     def load_reports(self):
@@ -77,7 +115,7 @@ class ReportsUI(QWidget):
 
         self.table.setColumnCount(len(columnas))
         self.table.setHorizontalHeaderLabels(columnas)
-        self.table.clearContents()  # <-- LIMPIA BIEN TODO
+        self.table.clearContents()
         self.table.setRowCount(len(data))
 
         for i, row in enumerate(data):
@@ -92,30 +130,32 @@ class ReportsUI(QWidget):
                 self.table.setItem(i, col_offset, QTableWidgetItem(row.get("respuesta_experto", "")))
                 col_offset += 1
 
-            # Botones de acción
             btns_layout = QHBoxLayout()
             btns_widget = QWidget()
 
             if estado == "reportada":
-                btn = QPushButton("✔️")
-                btn.setToolTip("Marcar pregunta como revisada")
-                btn.clicked.connect(lambda _, rid=row["id"]: self.mark_as_checked(rid))
-                btns_layout.addWidget(btn)
+                for icon, tooltip, handler in [
+                    ("✔️", "Marcar como revisada", self.mark_as_checked),
+                    ("🗑️", "Eliminar de PostgreSQL", self.delete_from_postgres)
+                ]:
+                    btn = QPushButton(icon)
+                    btn.setToolTip(tooltip)
+                    btn.clicked.connect(lambda _, rid=row["id"], h=handler: h(rid))
+                    btns_layout.addWidget(btn)
 
             elif estado == "revisada":
-                btn1 = QPushButton("🗑️")
-                btn1.setToolTip("Eliminar respuesta de ChromaDB")
-                btn1.clicked.connect(lambda _, rid=row["id"]: self.delete_from_chroma(rid))
-                btns_layout.addWidget(btn1)
-
-                btn2 = QPushButton("🔄")
-                btn2.setToolTip("Reactivar como reportada")
-                btn2.clicked.connect(lambda _, rid=row["id"]: self.reactivate_report(rid))
-                btns_layout.addWidget(btn2)
+                for icon, tooltip, handler in [
+                    ("🗑️", "Eliminar de Chroma", self.delete_from_chroma),
+                    ("🔄", "Reactivar reporte", self.reactivate_report)
+                ]:
+                    btn = QPushButton(icon)
+                    btn.setToolTip(tooltip)
+                    btn.clicked.connect(lambda _, rid=row["id"], h=handler: h(rid))
+                    btns_layout.addWidget(btn)
 
             elif estado == "eliminada":
                 btn = QPushButton("🔄")
-                btn.setToolTip("Reactivar como reportada")
+                btn.setToolTip("Reactivar reporte")
                 btn.clicked.connect(lambda _, rid=row["id"]: self.reactivate_report(rid))
                 btns_layout.addWidget(btn)
 
@@ -123,7 +163,6 @@ class ReportsUI(QWidget):
             btns_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
             btns_widget.setLayout(btns_layout)
             self.table.setCellWidget(i, col_offset, btns_widget)
-
 
     def export_excel(self):
         if self.table.rowCount() == 0:

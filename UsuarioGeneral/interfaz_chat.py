@@ -159,12 +159,21 @@ class ChatUI(QWidget):
 
         try:
             response = requests.post("http://localhost:8000/preguntar", json={"pregunta": user_text})
-            respuesta_ia = response.json().get("respuesta", "Error en la respuesta de la IA")
+            response.raise_for_status()
+            respuesta_ia = response.json().get("respuesta", "⚠️ Error en la respuesta de la IA.")
+        except requests.exceptions.ConnectionError:
+            QMessageBox.critical(self, "Error de conexión", "❌ No hay conexión con el servidor.")
+            return
+        except requests.exceptions.HTTPError as e:
+            QMessageBox.critical(self, "Error HTTP", f"⚠️ Error al procesar la solicitud:\n{e}")
+            return
         except Exception as e:
-            respuesta_ia = f"Error al conectarse con el servidor: {str(e)}"
+            QMessageBox.critical(self, "Error", f"⚠️ Ocurrió un error inesperado:\n{str(e)}")
+            return
 
         self.ultima_respuesta = respuesta_ia
         self.add_bot_response_with_button(respuesta_ia)
+
 
     def add_bot_response_with_button(self, respuesta):
         # Oculta botones previos
@@ -218,7 +227,7 @@ class ChatUI(QWidget):
             else:
                 QMessageBox.critical(self, "Error", r.json().get("detail", "Error al reportar."))
         except Exception as e:
-            QMessageBox.critical(self, "Error de conexión", f"⚠️ No se pudo conectar:\n{str(e)}")
+            QMessageBox.critical(self, "Error de conexión", f"⚠️ No se pudo conectar con el servidor")
 
     def clear_chat(self):
         for i in reversed(range(self.chat_layout.count() - 1)):
