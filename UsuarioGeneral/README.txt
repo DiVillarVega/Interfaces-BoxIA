@@ -16,6 +16,9 @@ deactivate
 pip install -r requirements.txt
 -Arrancar la interfaz:
 python3 interfaz_chat.py
+-Generar portable del chat:
+pyinstaller --onefile --windowed --name BoxIA-Chat interfaz_chat.py
+
 
 cd UsuarioGeneral
 source chat-env/bin/activate
