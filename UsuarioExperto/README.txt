@@ -18,7 +18,3 @@ pip install -r requirements.txt
 python3 interfaz_docs.py
 -Generar portable de la interfaz:
 pyinstaller --onefile --windowed --name BoxIA-Experto interfaz_docs.py
-
-cd UsuarioExperto
-source docs-env/bin/activate
-python3 interfaz_docs.py

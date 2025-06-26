@@ -128,7 +128,7 @@ class ChatUI(QWidget):
         message = QLabel()
         message.setWordWrap(True)
         message.setText(text)
-        message.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)  # 🔧 Esta línea nueva
+        message.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         if sender == "user":
             message.setStyleSheet("background-color: #3a3a3a; padding: 10px; border-radius: 10px; margin: 10px;")
@@ -187,7 +187,7 @@ class ChatUI(QWidget):
 
         respuesta_label = QLabel(respuesta)
         respuesta_label.setWordWrap(True)
-        respuesta_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)  # 🔧 Esta línea nueva
+        respuesta_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         respuesta_label.setStyleSheet("background-color: transparent; padding: 10px; margin: 10px; color: white;")
 
         icon = QLabel("💬")
